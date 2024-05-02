@@ -1,0 +1,6 @@
+[submodule "buildroot"]
+	path = buildroot
+	url = git://git.busybox.net/buildroot
+[submodule "buildroot.rockchip.ext"]
+	path = buildroot.rockchip.ext
+	url = https://github.com/flatmax/buildroot.rockchip.git
