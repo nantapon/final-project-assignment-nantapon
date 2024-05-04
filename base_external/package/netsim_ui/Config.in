@@ -1,0 +1,5 @@
+
+config BR2_PACKAGE_NETSIM_UI
+	bool "netsim_ui"
+	help
+	  Network Simulator UI

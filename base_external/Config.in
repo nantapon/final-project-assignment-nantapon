@@ -1,1 +1,2 @@
 source "$BR2_EXTERNAL_netsim_PATH/package/netsim_helper/Config.in"
+source "$BR2_EXTERNAL_netsim_PATH/package/netsim_ui/Config.in"
