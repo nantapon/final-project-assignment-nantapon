@@ -1,0 +1,15 @@
+{
+	"ecn":	false,
+	"loss_model":	"random",
+	"delay_unit_ui":	{
+		"value":	"ms",
+		"label":	"ms"
+	},
+	"delay_unit":	"ms",
+	"bandwidth_unit_ui":	{
+		"value":	"Mbps",
+		"label":	"Mbit/s"
+	},
+	"bandwidth_unit":	"Mbps",
+	"name":	"test4"
+}

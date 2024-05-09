@@ -1,13 +1,13 @@
-all: netsim_helper
+all: netsim_helper netsim
 
 CC ?= $(CROSS_COMPILE)gcc
 CFLAGS ?= -g -Wall -Werror
-TARGET ?= netsim_helper 
+TARGET ?= netsim
 LDFLAGS ?= -lpthread -lrt
 
 .PHONY: clean
 clean:
-	rm -rf netsim_helper *.o
+	rm -rf netsim *.o
 
-netsim_helper: netsim_helper.c
-	$(CC) $(CFLAGS) $^ -o $@ $(INCLUDES) $(LDFLAGS) 
+netsim: netsim.c netsim_status.c netsim_profiles.c
+	$(CC) $(CFLAGS) $^ -o $@ $(INCLUDES) $(LDFLAGS) -lcivetweb -lcjson

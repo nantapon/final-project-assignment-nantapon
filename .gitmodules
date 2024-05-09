@@ -4,3 +4,9 @@
 [submodule "buildroot.rockchip.ext"]
 	path = buildroot.rockchip.ext
 	url = https://github.com/flatmax/buildroot.rockchip.git
+[submodule "civetweb"]
+	path = civetweb
+	url = https://github.com/civetweb/civetweb.git
+[submodule "cJSON"]
+	path = cJSON
+	url = https://github.com/DaveGamble/cJSON.git
