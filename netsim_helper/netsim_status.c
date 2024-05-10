@@ -22,9 +22,20 @@ static const char *status_file = "status.json";
 //static const char *profiles_file = "profiles.json";
 
 struct tc_settings {
-  long delay;
-  long loss;
-  long bandwidth;
+  long delay, jitter, delay_corr;
+  const char *delay_dist;
+  const char *delay_unit;
+  const char *jitter_unit;
+
+  const char *loss_model;
+  long loss; // random loss
+  long p13, p31, p32, p23, p14;  // state loss
+  long p, r, h_bar, k_bar; // gemodel
+  bool ecn;
+  long corrupt, corrupt_corr; // corruption
+  long duplicate, duplicate_corr; // duplication
+  long reorder, reorder_corr, reorder_gap; // reordering
+  long bandwidth; // bandwidth
 };
 
 static cJSON *s_jstatus = NULL;
@@ -61,41 +72,112 @@ static bool netsim_apply_settings(struct tc_settings *tcs)
   bool success = false;
   const char *parent = "root";
   char buffer[512];
+  bool tbf_applied = false;
+  bool netem_applied = false;
+  char *p = buffer;
+  char *end = buffer + sizeof(buffer);
 
   netsim_clear_settings();
 
-  if ((tcs->bandwidth == -1) && (tcs->delay == -1) && (tcs->loss == -1)) {
-    success = true;
-    goto exit;
-  }
-
-  // Apply new settings
+  // bandwidth
   if (tcs->bandwidth != -1) {
-    snprintf(buffer, sizeof(buffer), "tc qdisc add dev %s %s handle 1: tbf rate %ld burst %ld latency 4s",
-        eth_dev, parent, tcs->bandwidth, tcs->bandwidth / 250);
+    snprintf(buffer, sizeof(buffer), "tc qdisc add dev %s %s handle 1: tbf rate %ldbit burst %ld latency 4s",
+        eth_dev, parent, tcs->bandwidth, (tcs->bandwidth * 8) / 250);
     parent = "parent 1:0";
     if (!execute(buffer)) {
       goto exit;
     }
+    tbf_applied = true;
   }
 
-  if ((tcs->delay != -1) || (tcs->loss != -1)) {
-    snprintf(buffer, sizeof(buffer), "tc qdisc add dev %s %s handle 10: netem", eth_dev, parent);
-    if (tcs->delay != -1) {
-      snprintf(buffer + strlen(buffer), sizeof(buffer) - strlen(buffer), " delay %ldus", tcs->delay);
+  // delay
+  snprintf(p, end-p, "tc qdisc add dev %s %s handle 10: netem", eth_dev, parent); p += strlen(p);
+  if (tcs->delay != -1) {
+    snprintf(p, end-p, " delay %ld%s", tcs->delay, tcs->delay_unit); p += strlen(p);
+    if (tcs->jitter != -1) {
+      snprintf(p, end-p, " %ld%s", tcs->jitter, tcs->jitter_unit); p += strlen(p);
+      if (tcs->delay_corr != -1) {
+        snprintf(p ,end-p, " %ld%%", tcs->delay_corr); p += strlen(p);
+      }
     }
-    if (tcs->loss != -1) {
-      snprintf(buffer + strlen(buffer), sizeof(buffer) - strlen(buffer), " loss %ld%%", tcs->loss);
+    netem_applied = true;
+  }
+
+  // loss
+  if (!strcmp(tcs->loss_model, "random") && (tcs->loss != -1)) {
+    snprintf(p, end-p, " loss random %ld%%", tcs->loss); p += strlen(p);
+    netem_applied = true;
+  } else if (!strcmp(tcs->loss_model, "state") && (tcs->p13 != -1)) {
+    snprintf(p, end-p, " loss state %ld%%", tcs->p13); p += strlen(p);
+    if (tcs->p31 != -1) {
+      snprintf(p, end-p, " %ld%%", tcs->p31); p += strlen(p);
+      if (tcs->p32 != -1) {
+        snprintf(p, end-p, " %ld%%", tcs->p32); p += strlen(p);
+        if (tcs->p23 != -1) {
+          snprintf(p, end-p, " %ld%%", tcs->p23); p += strlen(p);
+          if (tcs->p14 != -1) {
+            snprintf(p, end-p, " %ld%%", tcs->p14); p += strlen(p);
+          }
+        }
+      }
     }
+    netem_applied = true;
+  } else if (!strcmp(tcs->loss_model, "gemodel") && (tcs->p != -1)) {
+    snprintf(p, end-p, " loss gemodel %ld%%", tcs->p); p += strlen(p);
+    if (tcs->r != -1) {
+      snprintf(p, end-p, " %ld%%", tcs->r); p += strlen(p);
+      if (tcs->h_bar != -1) {
+        snprintf(p, end-p, " %ld%%", tcs->h_bar); p += strlen(p);
+        if (tcs->k_bar != -1) {
+          snprintf(p, end-p, " %ld%%", tcs->k_bar); p += strlen(p);
+        }
+      }
+    }
+    netem_applied = true;
+  }
+
+  // corrupt
+  if (tcs->corrupt != -1) {
+    snprintf(p, end-p, " corrupt %ld%%", tcs->corrupt); p += strlen(p);
+    if (tcs->corrupt_corr != -1) {
+      snprintf(p, end-p, " %ld%%", tcs->corrupt_corr); p += strlen(p);
+    }
+    netem_applied = true;
+  }
+
+  // duplicate
+  if (tcs->duplicate != -1) {
+    snprintf(p, end-p, " duplicate %ld%%", tcs->duplicate); p += strlen(p);
+    if (tcs->duplicate_corr != -1) {
+      snprintf(p, end-p, " %ld%%", tcs->duplicate_corr); p += strlen(p);
+    }
+    netem_applied = true;
+  }
+
+  // reorder
+  if (tcs->reorder != -1) {
+    snprintf(p, end-p, " reorder %ld%%", tcs->reorder); p += strlen(p);
+    if (tcs->reorder_corr != -1) {
+      snprintf(p, end-p, " %ld%%", tcs->reorder_corr); p += strlen(p);
+    }
+    if (tcs->reorder_gap != -1) {
+      snprintf(p, end-p, " gap %ld%%", tcs->reorder_gap); p += strlen(p);
+    }
+    netem_applied = true;
+  }
+
+  if (netem_applied) {
     parent = "parent 10:0";
     if (!execute(buffer)) {
       goto exit;
     }
   }
 
-  snprintf(buffer, sizeof(buffer), "tc qdisc add dev %s %s pfifo", eth_dev, parent);
-  if (!execute(buffer)) {
-    goto exit;
+  if (netem_applied && tbf_applied) {
+    snprintf(buffer, sizeof(buffer), "tc qdisc add dev %s %s pfifo", eth_dev, parent);
+    if (!execute(buffer)) {
+      goto exit;
+    }
   }
 
   success = true;
@@ -152,6 +234,40 @@ static bool netsim_get_string(cJSON *json, const char *name, const char *default
   return true;
 }
 
+static bool netsim_get_bool(cJSON *json, const char *name, bool default_value, bool *output)
+{
+  cJSON *item = cJSON_GetObjectItem(json, name);
+  if (!item) {
+    *output = default_value;
+    return true;
+  }
+
+  if (!cJSON_IsBool(item)) {
+    syslog(LOG_ERR, "%s is not a bool", name);
+    return false;
+  }
+
+  *output = cJSON_IsTrue(item) ? true : false;
+  return true;
+}
+
+static bool netsim_get_time_unit(cJSON *json, const char *name, const char *default_value, const char **output)
+{
+  if (!netsim_get_string(json, name, default_value, output)) {
+    return false;
+  }
+
+  if (strcmp(*output, "s") &&
+      strcmp(*output, "ms") &&
+      strcmp(*output, "us") &&
+      strcmp(*output, "ns")) {
+    return false;
+  }
+
+  return true;
+}
+
+#if 0
 static long netsim_time_multipler(const char *s)
 {
   if (!strcmp(s, "s")) {
@@ -164,6 +280,7 @@ static long netsim_time_multipler(const char *s)
     return 1000L;
   }
 }
+#endif
 
 static long netsim_bandwidth_multiplier(const char *s)
 {
@@ -192,19 +309,86 @@ static bool netsim_apply_profile(cJSON *jprofile)
 {
   struct tc_settings tcs;
   memset(&tcs, 0, sizeof(tcs));
-  const char *delay_unit = NULL;
   const char *bandwidth_unit = NULL;
 
-  if (!netsim_get_long(jprofile, "delay", -1, 0, LONG_MAX, &tcs.delay) ||
-      !netsim_get_string(jprofile, "delay_unit", "ms", &delay_unit) ||
+  if (// delay
+      !netsim_get_long(jprofile, "delay", -1, 0, LONG_MAX, &tcs.delay) ||
+      !netsim_get_time_unit(jprofile, "delay_unit", "ms", &tcs.delay_unit) ||
+      !netsim_get_long(jprofile, "jitter", -1, 0, LONG_MAX, &tcs.jitter) ||
+      !netsim_get_time_unit(jprofile, "jitter_unit", "ms", &tcs.jitter_unit) ||
+      !netsim_get_long(jprofile, "delay_corr", -1, 0, 100, &tcs.delay_corr) ||
+      !netsim_get_string(jprofile, "delay_dist", "normal", &tcs.delay_dist) ||
+
+      // loss
+      !netsim_get_string(jprofile, "loss_model", "random", &tcs.loss_model) ||
       !netsim_get_long(jprofile, "loss", -1, 0, 100, &tcs.loss) ||
+      // state loss model
+      !netsim_get_long(jprofile, "p13", -1, 0, 100, &tcs.p13) ||
+      !netsim_get_long(jprofile, "p31", -1, 0, 100, &tcs.p31) ||
+      !netsim_get_long(jprofile, "p32", -1, 0, 100, &tcs.p32) ||
+      !netsim_get_long(jprofile, "p23", -1, 0, 100, &tcs.p23) ||
+      !netsim_get_long(jprofile, "p14", -1, 0, 100, &tcs.p14) ||
+      // gemodel loss model
+      !netsim_get_long(jprofile, "p", -1, 0, 100, &tcs.p) ||
+      !netsim_get_long(jprofile, "r", -1, 0, 100, &tcs.r) ||
+      !netsim_get_long(jprofile, "h_bar", -1, 0, 100, &tcs.h_bar) ||
+      !netsim_get_long(jprofile, "k_bar", -1, 0, 100, &tcs.k_bar) ||
+      // ecn
+      !netsim_get_bool(jprofile, "ecn", false, &tcs.ecn) ||
+      // corrupt
+      !netsim_get_long(jprofile, "corrupt", -1, 0, 100, &tcs.corrupt) ||
+      !netsim_get_long(jprofile, "corrupt_corr", -1, 0, 100, &tcs.corrupt_corr) ||
+      // duplicate
+      !netsim_get_long(jprofile, "duplicate", -1, 0, 100, &tcs.duplicate) ||
+      !netsim_get_long(jprofile, "duplicate_corr", -1, 0, 100, &tcs.duplicate_corr) ||
+      // reordering
+      !netsim_get_long(jprofile, "reorder", -1, 0, 100, &tcs.reorder) ||
+      !netsim_get_long(jprofile, "reorder_corr", -1, 0, 100, &tcs.reorder_corr) ||
+      !netsim_get_long(jprofile, "reorder_gap", -1, 0, LONG_MAX, &tcs.reorder_gap) ||
+      // bandwidth
       !netsim_get_long(jprofile, "bandwidth", -1, 0, LONG_MAX, &tcs.bandwidth) ||
       !netsim_get_string(jprofile, "bandwidth_unit", "MBps", &bandwidth_unit)) {
     return false;
   }
 
   if (tcs.delay != -1) {
-    tcs.delay *= netsim_time_multipler(delay_unit);
+    if (((tcs.delay_corr != -1) && (tcs.jitter == -1))) {
+      syslog(LOG_ERR, "delay parameters invalid: [%ld [%ld [%ld]]]",
+          tcs.delay, tcs.jitter, tcs.delay_corr);
+      return false;
+    }
+
+    if (strcmp(tcs.delay_dist, "uniform") &&
+        strcmp(tcs.delay_dist, "normal") &&
+        strcmp(tcs.delay_dist, "pareto") &&
+        strcmp(tcs.delay_dist, "paretonormal")) {
+      syslog(LOG_ERR, "Invalid delay distribution: %s", tcs.loss_model);
+      return false;
+    }
+  }
+
+  if (!strcmp(tcs.loss_model, "random")) {
+
+  } else if (!strcmp(tcs.loss_model, "state")) {
+    if (((tcs.p31 != -1) && (tcs.p13 == -1)) ||
+        ((tcs.p32 != -1) && ((tcs.p13 == -1) || (tcs.p31 == -1))) ||
+        ((tcs.p23 != -1) && ((tcs.p13 == -1) || (tcs.p31 == -1) || (tcs.p32 == -1))) ||
+        ((tcs.p14 != -1) && ((tcs.p13 == -1) || (tcs.p31 == -1) || (tcs.p32 == -1) || (tcs.p23 == -1)))) {
+      syslog(LOG_ERR, "state loss parameters invalid: [%ld [%ld [%ld [%ld [%ld]]]]]",
+          tcs.p13, tcs.p31, tcs.p32, tcs.p23, tcs.p14);
+      return false;
+    }
+  } else if (!strcmp(tcs.loss_model, "gemodel")) {
+    if (((tcs.r != -1) && (tcs.p == -1)) ||
+        ((tcs.h_bar != -1) && ((tcs.p == -1) || (tcs.r == -1))) ||
+        ((tcs.k_bar != -1) && ((tcs.p == -1) || (tcs.r == -1) || (tcs.h_bar == -1)))) {
+      syslog(LOG_ERR, "gemodel loss parameters invalid: [%ld [%ld [%ld [%ld]]]]",
+          tcs.p, tcs.r, tcs.h_bar, tcs.k_bar);
+      return false;
+    }
+  } else {
+    syslog(LOG_ERR, "Invalid loss model: %s", tcs.loss_model);
+    return false;
   }
 
   if (tcs.bandwidth != -1) {
@@ -381,22 +565,22 @@ cJSON *netsim_status_get(void)
   return s_jstatus;
 }
 
-bool netsim_status_put(cJSON *jstatus)
+bool netsim_status_put(cJSON **jstatus)
 {
   bool retval = false;
   bool enabled = false;
   cJSON *elem = NULL;
   cJSON *jprofile = NULL;
 
-  if (!cJSON_IsObject(jstatus)) {
+  if (!cJSON_IsObject(*jstatus)) {
     syslog(LOG_ERR, "status is not object");
     goto exit;
   }
 
-  elem = cJSON_GetObjectItem(jstatus, "enabled");
+  elem = cJSON_GetObjectItem(*jstatus, "enabled");
   if (!elem) {
     enabled = s_enabled;
-    cJSON_AddBoolToObject(jstatus, "enabled", enabled);
+    cJSON_AddBoolToObject(*jstatus, "enabled", enabled);
   } else if (cJSON_IsTrue(elem)) {
     enabled = true;
   } else if (cJSON_IsFalse(elem)) {
@@ -406,11 +590,11 @@ bool netsim_status_put(cJSON *jstatus)
     goto exit;
   }
 
-  jprofile = cJSON_GetObjectItem(jstatus, "profile");
+  jprofile = cJSON_GetObjectItem(*jstatus, "profile");
 
   if (enabled) {
     if (!netsim_apply_profile(jprofile)) {
-      netsim_status_set_enabled(jstatus, false);
+      netsim_status_set_enabled(*jstatus, false);
       enabled = false;
       goto save_and_exit;
     }
@@ -422,7 +606,8 @@ bool netsim_status_put(cJSON *jstatus)
 
 save_and_exit:
   s_enabled = enabled;
-  netsim_status_set_current(jstatus);
+  netsim_status_set_current(*jstatus);
+  *jstatus = NULL;
   if (!netsim_write_profile(status_file, jprofile)) {
     retval = false;
     goto exit;

@@ -1,8 +1,8 @@
 
 import { writable } from "svelte/store";
 
-const STATUS_URI="http://localhost:8080/status";
-const PROFILES_URI="http://localhost:8080/profiles";
+const STATUS_URI = "http://localhost:8080/status";
+const PROFILES_URI = "http://localhost:8080/profiles";
 
 export const status = writable({
     enabled: false,
@@ -17,6 +17,12 @@ export const defaultProfile = {
         label: "ms"
     },
     delay_unit: "ms",
+    jitter_unit_ui: {
+        value: "ms",
+        label: "ms"
+    },
+    jitter_unit: "ms",
+    delay_dist: "normal",
     bandwidth_unit_ui: {
         value: "Mbps",
         label: "Mbit/s"
@@ -24,11 +30,10 @@ export const defaultProfile = {
     bandwidth_unit: "Mbps",
 };
 
-function addDefaultToStatus(status)
-{
+function addDefaultToStatus(status) {
     status.profile = {
         ...defaultProfile,
-        ...status.profile 
+        ...status.profile
     };
 }
 
@@ -39,23 +44,36 @@ export async function getStatus() {
         throw new Error('Request failed');
     }
 
-    let status =  await res.json();
+    let status = await res.json();
     addDefaultToStatus(status);
     return status;
 }
 
-export async function saveStatus(status) 
-{
+function setNumber(x, n) {
+    if (x[n]) {
+        x[n] = Number(x[n]);
+    } else {
+        delete x[n];
+    }
+}
+
+const numberFieldNames = [
+    "delay", "jitter", "delay_corr", "loss",
+    "p13", "p31", "p32", "p23", "p14",
+    "p", "r", "h_bar", "k_bar",
+    "corrupt", "corrupt_corr",
+    "duplicate", "duplicate_corr",
+    "reorder", "reorder_corr", "reorder_gap",
+    "bandwidth"
+];
+
+export async function saveStatus(status) {
     let profile = status.profile;
-    if (profile.loss) {
-        profile.loss = Number(profile.loss);
+    for (const n in numberFieldNames) {
+        setNumber(profile, n);
     }
-    if (profile.delay) {
-        profile.delay = Number(profile.delay);
-    }
-    if (profile.bandwidth) {
-        profile.bandwidth = Number(profile.bandwidth);
-    }
+
+    profile.ecn = profile.ecn ? true : false;
     profile.delay_unit = profile.delay_unit_ui.value;
     profile.bandwidth_unit = profile.bandwidth_unit_ui.value;
     console.log(status);
@@ -69,25 +87,23 @@ export async function saveStatus(status)
         throw new Error('Request failed');
     }
 
-    let status1 =  await res.json();
+    let status1 = await res.json();
     addDefaultToStatus(status1);
     return status1;
 }
 
-export async function getProfiles()
-{
+export async function getProfiles() {
     const res = await fetch(PROFILES_URI);
 
     if (!res.ok) {
         throw new Error('Request failed');
     }
 
-    let profiles =  await res.json();
+    let profiles = await res.json();
     return profiles;
 }
 
-export async function saveProfiles(profiles) 
-{
+export async function saveProfiles(profiles) {
     console.log("Profiles: ", profiles);
 
     const res = await fetch(PROFILES_URI, {
@@ -99,6 +115,6 @@ export async function saveProfiles(profiles)
         throw new Error('Request failed');
     }
 
-    let profiles1 =  await res.json();
+    let profiles1 = await res.json();
     return profiles1;
 }

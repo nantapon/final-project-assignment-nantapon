@@ -7,6 +7,12 @@
 			"label":	"ms"
 		},
 		"delay_unit":	"ms",
+		"jitter_unit_ui":	{
+			"value":	"ms",
+			"label":	"ms"
+		},
+		"jitter_unit":	"ms",
+		"delay_dist":	"normal",
 		"bandwidth_unit_ui":	{
 			"value":	"MBps",
 			"label":	"MB/s",

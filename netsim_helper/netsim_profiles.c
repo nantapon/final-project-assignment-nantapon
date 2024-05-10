@@ -146,20 +146,21 @@ cJSON *netsim_profiles_get(void)
   return s_jprofiles;
 }
 
-bool netsim_profiles_put(cJSON *jprofiles)
+bool netsim_profiles_put(cJSON **jprofiles)
 {
   bool retval = false;
 
-  if (!cJSON_IsObject(jprofiles)) {
+  if (!cJSON_IsObject(*jprofiles)) {
     syslog(LOG_ERR, "profiles is not object");
     goto exit;
   }
 
-  if (!netsim_write_profiles(profiles_file, jprofiles)) {
+  if (!netsim_write_profiles(profiles_file, *jprofiles)) {
     goto exit;
   }
 
-  s_jprofiles = jprofiles;
+  s_jprofiles = *jprofiles;
+  *jprofiles = NULL;
   retval = true;
 
 exit:

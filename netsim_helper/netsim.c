@@ -111,11 +111,10 @@ static int netsim_handle_status_put(struct mg_connection *conn, void *arg)
   }
 
   netsim_status_lock();
-  if (!netsim_status_put(jstatus)) {
+  if (!netsim_status_put(&jstatus)) {
     netsim_status_unlock();
     goto exit;
   }
-  jstatus = NULL;
   free(alloc_buffer);
 
   retcode = netsim_handle_status_get_internal(conn, arg);
@@ -159,10 +158,9 @@ static int netsim_handle_profiles_put(struct mg_connection *conn, void *arg)
     goto exit;
   }
 
-  if (!netsim_profiles_put(jprofiles)) {
+  if (!netsim_profiles_put(&jprofiles)) {
     goto exit;
   }
-  jprofiles = NULL;
   free(alloc_buffer);
 
   return netsim_handle_profiles_get(conn, arg);

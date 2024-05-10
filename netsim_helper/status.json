@@ -6,10 +6,21 @@
 		"label":	"ms"
 	},
 	"delay_unit":	"ms",
-	"bandwidth_unit_ui":	{
-		"value":	"Mbps",
-		"label":	"Mbit/s"
+	"jitter_unit_ui":	{
+		"value":	"ms",
+		"label":	"ms"
 	},
-	"bandwidth_unit":	"Mbps",
-	"name":	"test4"
+	"jitter_unit":	"ms",
+	"delay_dist":	"normal",
+	"bandwidth_unit_ui":	{
+		"value":	"MBps",
+		"label":	"MB/s",
+		"disabled":	false
+	},
+	"bandwidth_unit":	"MBps",
+	"name":	"default",
+	"loss":	1,
+	"description":	"test description",
+	"delay":	100,
+	"bandwidth":	1
 }
