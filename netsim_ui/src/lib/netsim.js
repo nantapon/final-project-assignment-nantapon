@@ -24,10 +24,10 @@ export const defaultProfile = {
     jitter_unit: "ms",
     delay_dist: "normal",
     bandwidth_unit_ui: {
-        value: "Mbps",
+        value: "mbit",
         label: "Mbit/s"
     },
-    bandwidth_unit: "Mbps",
+    bandwidth_unit: "mbit",
 };
 
 function addDefaultToStatus(status) {
@@ -52,8 +52,6 @@ export async function getStatus() {
 function setNumber(x, n) {
     if (x[n]) {
         x[n] = Number(x[n]);
-    } else {
-        delete x[n];
     }
 }
 
@@ -69,13 +67,14 @@ const numberFieldNames = [
 
 export async function saveStatus(status) {
     let profile = status.profile;
-    for (const n in numberFieldNames) {
+    for (const n of numberFieldNames) {
         setNumber(profile, n);
     }
 
     profile.ecn = profile.ecn ? true : false;
     profile.delay_unit = profile.delay_unit_ui.value;
     profile.bandwidth_unit = profile.bandwidth_unit_ui.value;
+    status.profile = { ...profile };
     console.log(status);
 
     const res = await fetch(STATUS_URI, {

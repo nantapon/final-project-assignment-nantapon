@@ -1,0 +1,33 @@
+{
+	"ecn":	false,
+	"loss_model":	"random",
+	"delay_unit_ui":	{
+		"value":	"us",
+		"label":	"us",
+		"disabled":	false
+	},
+	"delay_unit":	"us",
+	"jitter_unit_ui":	{
+		"value":	"ms",
+		"label":	"ms"
+	},
+	"jitter_unit":	"ms",
+	"delay_dist":	"normal",
+	"bandwidth_unit_ui":	{
+		"value":	"mbps",
+		"label":	"MB/s",
+		"disabled":	false
+	},
+	"bandwidth_unit":	"mbps",
+	"name":	"default",
+	"description":	"test description",
+	"bandwidth":	1,
+	"loss":	1,
+	"loss_enabled":	false,
+	"delay_enabled":	false,
+	"bandwidth_enabled":	true,
+	"corrupt_enabled":	false,
+	"reorder_enabled":	false,
+	"duplicate_enabled":	false,
+	"delay":	100
+}
