@@ -14,8 +14,6 @@
 #include <pthread.h>
 #include "netsim.h"
 
-#define CONFIG_FILE "netsim.json"
-
 // configuration
 static const char *eth_dev = "wlp61s0";
 static const char *status_file = "status.json";
@@ -513,11 +511,20 @@ exit:
   return retval;
 }
 
-bool netsim_status_init(void)
+bool netsim_status_init(const char *arg_dev, const char *arg_dir)
 {
   bool retval = false;
   cJSON *jstatus = NULL;
   cJSON *jprofile = NULL;
+  char buffer[PATH_MAX];
+
+  eth_dev = arg_dev;
+
+  snprintf(buffer, sizeof(buffer), "%s/status.json", arg_dir);
+  status_file = strdup(buffer);
+  if (!status_file) {
+    goto exit;
+  }
 
   // Turn off everything
   netsim_clear_settings();

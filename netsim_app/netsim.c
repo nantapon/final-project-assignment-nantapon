@@ -2,22 +2,19 @@
 #include <syslog.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <civetweb.h>
 #include <cjson/cJSON.h>
 #include "netsim.h"
 
-#define DOCUMENT_ROOT "."
-#define PORTS "8080"
-
-#define CONTROL_URL "/control"
-
 static struct mg_callbacks callbacks;
-struct mg_context *ctx;
-const char *options[] = {
-  "document_root", DOCUMENT_ROOT,
-  "listening_ports", PORTS,
-  NULL
-};
+static struct mg_context *ctx;
+
+static bool arg_daemon = false;
+static const char *arg_dir="/var/lib/netsim";
+static const char *arg_dev="eth0";
+static const char *arg_www_dir="/www";
+static const char *arg_ports="8080";
 
 struct netsim_handlers
 {
@@ -213,6 +210,11 @@ int start_web(void)
   struct mg_init_data init;
   struct mg_error_data error;
   char error_text[256];
+  const char *options[] = {
+    "document_root", arg_www_dir,
+    "listening_ports", arg_ports,
+    NULL
+  };
 
   init_callbacks();
   mg_init_library(0);
@@ -242,10 +244,66 @@ int start_web(void)
   return 0;
 }
 
+static bool process_args(int argc, char **argv)
+{
+  int opt;
+
+  while ((opt = getopt(argc, argv, "de:s:w:p:")) != -1) {
+    switch (opt) {
+    case 'd':
+      arg_daemon = true;
+      break;
+
+    case 'e':
+      arg_dev = optarg;
+      break;
+
+    case 's':
+      arg_dir = optarg;
+      break;
+
+    case 'w':
+      arg_www_dir = optarg;
+      break;
+
+    case 'p':
+      arg_ports = optarg;
+      break;
+
+    default: /* '?' */
+      fprintf(stderr, "Usage: %s [-d] [-e dev] [-s dir] [-w www_dir] [-p ports]\n", argv[0]);
+      return false;
+    }
+  }
+  return true;
+}
+
 int main(int argc, char **argv)
 {
   openlog(NULL, 0, LOG_USER);
-  netsim_status_init();
-  netsim_profiles_init();
+
+  process_args(argc, argv);
+
+  if (arg_daemon) {
+    pid_t childpid = fork();
+    if (childpid != 0) {
+      // quit parent
+      _exit(0);
+    }
+    setsid();
+    if (chdir("/") == -1) {
+      syslog(LOG_ERR, "chdir error: %s", strerror(errno));
+      return 1;
+    }
+    if ((freopen("/dev/null", "r", stdin) == NULL) ||
+        (freopen("/dev/null", "w", stdout) == NULL) ||
+        (freopen("/dev/null", "r", stderr) == NULL)) {
+      syslog(LOG_ERR, "Error in redirecting i/o!: %s", strerror(errno));
+      return 1;
+    }
+  }
+
+  netsim_status_init(arg_dev, arg_dir);
+  netsim_profiles_init(arg_dir);
   return start_web();
 }

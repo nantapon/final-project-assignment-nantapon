@@ -35,6 +35,7 @@
 
     function setCurrentProfile(profile) {
         $status.profile = { ...profile };
+        $status = $status;
     }
 
     function newProfile() {

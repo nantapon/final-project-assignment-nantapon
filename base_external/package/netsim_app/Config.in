@@ -1,0 +1,5 @@
+
+config BR2_PACKAGE_NETSIM_APP
+	bool "netsim_app"
+	help
+	  Network Simulator App 

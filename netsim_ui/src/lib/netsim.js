@@ -1,8 +1,15 @@
 
 import { writable } from "svelte/store";
 
-const STATUS_URI = "http://localhost:8080/status";
-const PROFILES_URI = "http://localhost:8080/profiles";
+let STATUS_URI;
+let PROFILES_URI;
+if (location.port === "5173") {
+    STATUS_URI = "http://localhost:8080/status";
+    PROFILES_URI = "http://localhost:8080/profiles";
+} else {
+    STATUS_URI = "/status";
+    PROFILES_URI = "/profiles";
+}
 
 export const status = writable({
     enabled: false,
@@ -28,6 +35,13 @@ export const defaultProfile = {
         label: "Mbit/s"
     },
     bandwidth_unit: "mbit",
+    description: "",
+    loss_enabled: false,
+    delay_enabled: false,
+    bandwidth_enabled: false,
+    corrupt_enabled: false,
+    duplicate_enabled: false,
+    reorder_enabled: false
 };
 
 function addDefaultToStatus(status) {
@@ -75,7 +89,7 @@ export async function saveStatus(status) {
     profile.delay_unit = profile.delay_unit_ui.value;
     profile.bandwidth_unit = profile.bandwidth_unit_ui.value;
     status.profile = { ...profile };
-    console.log(status);
+    console.log("Status:", status);
 
     const res = await fetch(STATUS_URI, {
         method: "POST",

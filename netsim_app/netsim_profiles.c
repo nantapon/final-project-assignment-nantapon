@@ -105,10 +105,17 @@ exit:
   return retval;
 }
 
-bool netsim_profiles_init(void)
+bool netsim_profiles_init(const char *arg_dir)
 {
   bool retval = false;
   cJSON *jprofiles = NULL;
+  char buffer[PATH_MAX];
+
+  snprintf(buffer, sizeof(buffer), "%s/profiles.json", arg_dir);
+  profiles_file = strdup(buffer);
+  if (!profiles_file) {
+    goto exit;
+  }
 
   // load profile
   if (!netsim_load_profiles(profiles_file, &jprofiles)) {

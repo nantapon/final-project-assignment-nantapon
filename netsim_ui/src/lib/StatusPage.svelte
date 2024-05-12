@@ -26,6 +26,7 @@
             $profiles[profile.name] = {...profile};
             saveProfiles($profiles);
         }
+        $status = $status;
     }
 
     function toggleSwitch(e)
@@ -64,6 +65,5 @@
     </Card.Content>
     <Card.Footer class="flex justify-between">
         <Button on:click={save_status}>{$status.enabled ? "Save & Apply" : "Save"}</Button>
-        <Button variant="outline">Cancel</Button>
     </Card.Footer>
 </Card.Root>

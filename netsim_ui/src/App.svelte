@@ -12,13 +12,13 @@
     let promise = getStatus();
     promise.then((status1) => {
         $status = { ...status1 };
-        console.log($status)  
+        // console.log($status)  
     });
 
     let promise2 = getProfiles();
     promise2.then((profiles1) => {
         $profiles = { ...profiles1 };
-        console.log($profiles);
+        // console.log($profiles);
     });
 </script>
 
