@@ -4,7 +4,7 @@
     import HelpPage from "./lib/HelpPage.svelte";
     import StatusPage from "./lib/StatusPage.svelte";
     import ProfilesPage from "./lib/ProfilesPage.svelte";
-    import { getStatus, getProfiles, status, profiles } from "./lib/netsim";
+    import { getStatus, getProfiles, status, profiles, config, getConfig } from "./lib/netsim";
 
     import * as Tabs from "$lib/components/ui/tabs";
     import { ScrollArea } from "$lib/components/ui/scroll-area";
@@ -19,6 +19,11 @@
     promise2.then((profiles1) => {
         $profiles = { ...profiles1 };
         // console.log($profiles);
+    });
+
+    let promise3 = getConfig();
+    promise3.then((config1) => {
+        $config = { ...config1 };
     });
 </script>
 
@@ -39,10 +44,13 @@
             </h1>
         {/if}
         {#await promise catch error}
-            <p class="text-foreground text-center">{error.message}</p>
+            <p class="text-red-500 text-center">{error.message}</p>
         {/await}
         {#await promise2 catch error}
-            <p class="text-foreground text-center">{error.message}</p>
+            <p class="text-red-500 text-center">{error.message}</p>
+        {/await}
+        {#await promise3 catch error}
+            <p class="text-red-500 text-center">{error.message}</p>
         {/await}
         <div class="w-[400px] block xl:hidden">
             <Tabs.Root value="status">

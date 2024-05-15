@@ -19,6 +19,11 @@ export const status = writable({
     profile: {}
 });
 export const profiles = writable({});
+export const config = writable({
+    addr: "netsim-ip-address",
+    addr6: "netsim-ipv6-address"
+});
+
 export const defaultProfile = {
     ecn: false,
     loss_model: "random",
@@ -135,7 +140,7 @@ export async function saveProfiles(profiles) {
     return profiles1;
 }
 
-async function getConfig() {
+export async function getConfig() {
     const res = await fetch(CONFIG_URI);
 
     if (!res.ok) {
@@ -144,5 +149,4 @@ async function getConfig() {
 
     let config = await res.json();
     return config;
-}
-export const config = await getConfig();    
+}   

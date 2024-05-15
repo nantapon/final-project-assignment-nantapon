@@ -26,23 +26,23 @@
                             fe80::)
                         </p>
                         <pre>
-sudo ip route add default via {config.addr} dev &lt;device&gt; metric 10                             
-sudo ip route -6 add default via {config.addr6} dev &lt;device&gt; metric 10
+sudo ip route add default via {$config.addr} dev &lt;device&gt; metric 10                             
+sudo ip route -6 add default via {$config.addr6} dev &lt;device&gt; metric 10
                         </pre>
                         <p>You can also set route for more limited targets</p>
                         <pre>
-sudo ip route add &lt;destination_network&gt; via {config.addr} dev &lt;device&gt; metric 10
-sudo ip route -6 add &lt;destination_network&gt; via {config.addr6} dev &lt;device&gt; metric 10
+sudo ip route add &lt;destination_network&gt; via {$config.addr} dev &lt;device&gt; metric 10
+sudo ip route -6 add &lt;destination_network&gt; via {$config.addr6} dev &lt;device&gt; metric 10
 </pre>
 <p>The example below is for windows in command path with administrative privileges</p>
 <pre>
-netsh interface ipv4 add route &lt;destination_network&gt; &lt;interface_index&gt; {config.addr} metric=10
-netsh interface ipv6 add route &lt;destination_network&gt; &lt;interface_index&gt; {config.addr6} metric=10
+netsh interface ipv4 add route &lt;destination_network&gt; &lt;interface_index&gt; {$config.addr} metric=10
+netsh interface ipv6 add route &lt;destination_network&gt; &lt;interface_index&gt; {$config.addr6} metric=10
 </pre>
 <p>For Mac:</p>
 <pre>
-sudo route -n add &lt;destination_network&gt; {config.addr}
-sudo route -n add -inet6 &lt;destination_network&gt; {config.addr6} 
+sudo route -n add &lt;destination_network&gt; {$config.addr}
+sudo route -n add -inet6 &lt;destination_network&gt; {$config.addr6} 
 </pre>
 </article>
                 </Accordion.Content>
