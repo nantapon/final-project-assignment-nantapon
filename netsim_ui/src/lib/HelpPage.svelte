@@ -26,8 +26,8 @@
                             fe80::)
                         </p>
                         <pre>
-sudo ip route add default via {$config.addr} dev &lt;device&gt; metric 10                             
-sudo ip route -6 add default via {$config.addr6} dev &lt;device&gt; metric 10
+sudo ip route add default via {$config.addr} metric 10                             
+sudo ip route -6 add default via {$config.addr6} metric 10
                         </pre>
                         <p>You can also set route for more limited targets</p>
                         <pre>

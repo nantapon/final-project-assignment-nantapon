@@ -136,7 +136,7 @@ static int netsim_handle_profiles_get_internal(struct mg_connection *conn, void 
   int retval = 500;
   cJSON *jprofiles = NULL;
 
-  netsim_profiles_get();
+  jprofiles = netsim_profiles_get();
   if (!jprofiles) {
     mg_send_http_error(conn, 500, "Server error");
     goto exit;
