@@ -9,5 +9,5 @@ LDFLAGS ?= -lpthread -lrt
 clean:
 	rm -rf netsim *.o
 
-netsim: netsim.c netsim_status.c netsim_profiles.c
+netsim: netsim.c netsim_status.c netsim_profiles.c netsim_config.c
 	$(CC) $(CFLAGS) $^ -o $@ $(INCLUDES) $(LDFLAGS) -lcivetweb -lcjson

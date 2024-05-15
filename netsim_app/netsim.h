@@ -12,3 +12,6 @@ void netsim_profiles_lock(void);
 void netsim_profiles_unlock(void);
 cJSON *netsim_profiles_get(void);
 bool netsim_profiles_put(cJSON **json);
+
+bool netsim_config_init(const char *arg_dev);
+cJSON *netsim_config_get(void);

@@ -1,14 +1,17 @@
 
 import { writable } from "svelte/store";
 
-let STATUS_URI;
-let PROFILES_URI;
+let STATUS_URI
+let PROFILES_URI
+let CONFIG_URI
 if (location.port === "5173") {
     STATUS_URI = "http://localhost:8080/status";
     PROFILES_URI = "http://localhost:8080/profiles";
+    CONFIG_URI = "http://localhost:8080/config";
 } else {
     STATUS_URI = "/status";
     PROFILES_URI = "/profiles";
+    CONFIG_URI = "/config";
 }
 
 export const status = writable({
@@ -131,3 +134,15 @@ export async function saveProfiles(profiles) {
     let profiles1 = await res.json();
     return profiles1;
 }
+
+async function getConfig() {
+    const res = await fetch(CONFIG_URI);
+
+    if (!res.ok) {
+        throw new Error('Request failed');
+    }
+
+    let config = await res.json();
+    return config;
+}
+export const config = await getConfig();    

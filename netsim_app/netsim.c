@@ -175,6 +175,23 @@ static struct netsim_handlers profiles_handlers = {
   NULL
 };
 
+static int netsim_handle_config_get(struct mg_connection *conn, void *arg)
+{
+  cJSON *jconfig = netsim_config_get();
+  if (!jconfig) {
+    mg_send_http_error(conn, 500, "Server error");
+    return 500;
+  }
+  netsim_send_json(conn, jconfig);
+  return 200;
+}
+
+static struct netsim_handlers config_handlers = {
+  netsim_handle_config_get,
+  NULL,
+  NULL
+};
+
 static int netsim_handle(struct mg_connection *conn, void *arg)
 {
   struct netsim_handlers *handlers = arg;
@@ -237,6 +254,7 @@ int start_web(void)
 
   mg_set_request_handler(ctx, "/status", netsim_handle, &status_handlers);
   mg_set_request_handler(ctx, "/profiles", netsim_handle, &profiles_handlers);
+  mg_set_request_handler(ctx, "/config", netsim_handle, &config_handlers);
   for(;;) {
     sleep(10);
   }
@@ -303,6 +321,7 @@ int main(int argc, char **argv)
     }
   }
 
+  netsim_config_init(arg_dev);
   netsim_status_init(arg_dev, arg_dir);
   netsim_profiles_init(arg_dir);
   return start_web();

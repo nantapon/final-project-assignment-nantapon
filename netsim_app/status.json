@@ -19,15 +19,16 @@
 		"disabled":	false
 	},
 	"bandwidth_unit":	"mbps",
-	"name":	"default",
 	"description":	"test description",
+	"loss_enabled":	false,
+	"delay_enabled":	true,
+	"bandwidth_enabled":	true,
+	"corrupt_enabled":	true,
+	"duplicate_enabled":	false,
+	"reorder_enabled":	false,
+	"name":	"test",
 	"bandwidth":	1,
 	"loss":	1,
-	"loss_enabled":	false,
-	"delay_enabled":	false,
-	"bandwidth_enabled":	true,
-	"corrupt_enabled":	false,
-	"reorder_enabled":	false,
-	"duplicate_enabled":	false,
-	"delay":	100
+	"delay":	100,
+	"corrupt":	5
 }
