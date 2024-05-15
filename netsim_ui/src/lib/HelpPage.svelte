@@ -29,7 +29,7 @@
 sudo ip route add default via {$config.addr} metric 10                             
 sudo ip route -6 add default via {$config.addr6} metric 10
                         </pre>
-                        <p>You can also set route for more limited targets</p>
+                        <p>You can also set route for more limited targets. This is a must if you want to use in LAN.</p>
                         <pre>
 sudo ip route add &lt;destination_network&gt; via {$config.addr} dev &lt;device&gt; metric 10
 sudo ip route -6 add &lt;destination_network&gt; via {$config.addr6} dev &lt;device&gt; metric 10

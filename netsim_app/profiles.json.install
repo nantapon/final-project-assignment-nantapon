@@ -3,11 +3,11 @@
 		"ecn":	false,
 		"loss_model":	"random",
 		"delay_unit_ui":	{
-			"value":	"us",
-			"label":	"us",
+			"value":	"ms",
+			"label":	"ms",
 			"disabled":	false
 		},
-		"delay_unit":	"us",
+		"delay_unit":	"ms",
 		"jitter_unit_ui":	{
 			"value":	"ms",
 			"label":	"ms"
@@ -36,11 +36,11 @@
 		"ecn":	false,
 		"loss_model":	"random",
 		"delay_unit_ui":	{
-			"value":	"us",
-			"label":	"us",
+			"value":	"ms",
+			"label":	"ms",
 			"disabled":	false
 		},
-		"delay_unit":	"us",
+		"delay_unit":	"ms",
 		"jitter_unit_ui":	{
 			"value":	"ms",
 			"label":	"ms"
