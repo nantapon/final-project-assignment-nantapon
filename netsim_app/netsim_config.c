@@ -19,6 +19,11 @@
 #include "netsim.h"
 
 static cJSON *s_jconfig = NULL;
+static bool s_need_reload = true;
+static pthread_mutex_t status_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+#define MUTEX_LOCK() pthread_mutex_lock(&status_mutex)
+#define MUTEX_UNLOCK() pthread_mutex_unlock(&status_mutex)
 
 bool
 netsim_addr_to_name(struct sockaddr *sa, int salen, char **out_addr)
@@ -143,10 +148,34 @@ bool netsim_config_init(const char *arg_dev)
   cJSON_AddStringToObject(jconfig, "addr", addr ? addr : "<netsim-ip-addr>");
   cJSON_AddStringToObject(jconfig, "addr6", addr6 ? addr6 : "<netsim-ipv6-addr");
 
+  if (!addr || !addr6) {
+    s_need_reload = true;
+  } else {
+    s_need_reload = false;
+  }
+
   s_jconfig = jconfig;
   free(addr);
   free(addr6);
   return true;
+}
+
+bool netsim_config_reload(const char *arg_dev)
+{
+  if (s_need_reload) {
+    return netsim_config_init(arg_dev);
+  }
+  return true;
+}
+
+void netsim_config_lock(void)
+{
+  MUTEX_LOCK();
+}
+
+void netsim_config_unlock(void)
+{
+  MUTEX_UNLOCK();
 }
 
 cJSON *netsim_config_get(void)

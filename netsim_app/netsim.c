@@ -131,19 +131,37 @@ static struct netsim_handlers status_handlers = {
   NULL
 };
 
-static int netsim_handle_profiles_get(struct mg_connection *conn, void *arg)
+static int netsim_handle_profiles_get_internal(struct mg_connection *conn, void *arg)
 {
-  cJSON *jprofiles = netsim_profiles_get();
+  int retval = 500;
+  cJSON *jprofiles = NULL;
+
+  netsim_profiles_lock();
+  netsim_profiles_get();
   if (!jprofiles) {
     mg_send_http_error(conn, 500, "Server error");
-    return 500;
+    goto exit;
   }
   netsim_send_json(conn, jprofiles);
-  return 200;
+  retval = 200;
+
+exit:
+  netsim_profiles_unlock();
+  return retval;
+}
+
+static int netsim_handle_profiles_get(struct mg_connection *conn, void *arg)
+{
+  int retcode = 0;
+  netsim_profiles_lock();
+  retcode = netsim_handle_profiles_get_internal(conn, arg);
+  netsim_profiles_unlock();
+  return retcode;
 }
 
 static int netsim_handle_profiles_put(struct mg_connection *conn, void *arg)
 {
+  int retcode = 0;
   cJSON *jprofiles = NULL;
 
   // Read to p and total
@@ -155,12 +173,16 @@ static int netsim_handle_profiles_put(struct mg_connection *conn, void *arg)
     goto exit;
   }
 
+  netsim_profiles_lock();
   if (!netsim_profiles_put(&jprofiles)) {
+    netsim_profiles_unlock();
     goto exit;
   }
   free(alloc_buffer);
 
-  return netsim_handle_profiles_get(conn, arg);
+  retcode = netsim_handle_profiles_get_internal(conn, arg);
+  netsim_profiles_unlock();
+  return retcode;
 
 exit:
   cJSON_free(jprofiles);
@@ -177,13 +199,22 @@ static struct netsim_handlers profiles_handlers = {
 
 static int netsim_handle_config_get(struct mg_connection *conn, void *arg)
 {
-  cJSON *jconfig = netsim_config_get();
+  int retval = 500;
+  cJSON *jconfig = NULL;
+
+  netsim_config_lock();
+  netsim_config_reload(arg_dev);
+  jconfig = netsim_config_get();
   if (!jconfig) {
     mg_send_http_error(conn, 500, "Server error");
-    return 500;
+    goto exit;
   }
   netsim_send_json(conn, jconfig);
-  return 200;
+  retval = 200;
+
+exit:
+  netsim_config_unlock();
+  return retval;
 }
 
 static struct netsim_handlers config_handlers = {
